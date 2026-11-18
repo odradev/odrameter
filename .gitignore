@@ -1,3 +1,4 @@
 data/
 site/
 scan.log
+.scan-*.lock

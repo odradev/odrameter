@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="pl">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Odromierz</title>
+<title>Odrameter</title>
 <style>
   :root {
     color-scheme: light;
@@ -97,25 +97,27 @@
 </head>
 <body>
 <main>
-  <h1>Odromierz</h1>
-  <p class="lede">Ile transakcji w sieci Casper używa Odry — czyli wykonuje co najmniej jeden kontrakt napisany w tym frameworku albo taki kontrakt instaluje.</p>
+  <h1>Odrameter</h1>
+  <p class="lede">How many Casper transactions use Odra: they execute at least one contract written in the framework, or install one.</p>
   <div class="networks" id="networks"></div>
   <footer>
-    <p><strong>Jak to jest liczone.</strong> Skaner pobiera z węzła RPC każdy blok z okna, a dla każdej transakcji uruchamiającej wasm sprawdza w efektach wykonania, jakie kontrakty zostały dotknięte. Kontrakt uznaje za napisany w Odrze, jeśli jego kod wasm zawiera nazwy argumentów instalatora Odry (<code>odra_cfg_*</code>), obecne od wersji 0.8. Natywne transfery i operacje aukcyjne nie wykonują kontraktów, więc liczą się tylko do sumy wszystkich transakcji. Transakcje nieudane są liczone, jeśli były skierowane do kontraktu Odry.</p>
+    <p><strong>How it is counted.</strong> The scanner fetches every block in the window from a node's RPC and, for each transaction that runs wasm, reads the execution effects to see which contracts were touched. A contract counts as written in Odra when its wasm contains the Odra installer's argument names (<code>odra_cfg_*</code>). Native transfers and auction operations run no contract code, so they only count towards the total. Failed transactions are counted when they targeted an Odra contract.</p>
     <p id="generated"></p>
   </footer>
 </main>
 <script>
 const DATA = /*__DATA__*/null;
-const WINDOW_LABELS = { '24h': '24 godziny', '7d': '7 dni', '30d': '30 dni' };
+const WINDOW_LABELS = { '24h': '24 hours', '7d': '7 days', '30d': '30 days' };
 const SERIES = [
   { key: 'odra', label: 'Odra', color: 'var(--odra)' },
-  { key: 'contract', label: 'Inne kontrakty', color: 'var(--contract)' },
-  { key: 'native', label: 'Natywne (transfery, aukcja)', color: 'var(--native)' },
+  { key: 'contract', label: 'Other contracts', color: 'var(--contract)' },
+  { key: 'native', label: 'Native (transfers, auction)', color: 'var(--native)' },
 ];
-const nf = new Intl.NumberFormat('pl-PL');
-const pct = (part, whole) => whole ? (100 * part / whole).toLocaleString('pl-PL', { maximumFractionDigits: 1 }) + '%' : '–';
+const nf = new Intl.NumberFormat('en-US');
+const pct = (part, whole) => whole ? (100 * part / whole).toLocaleString('en-US', { maximumFractionDigits: 1 }) + '%' : '–';
 const SVG = 'http://www.w3.org/2000/svg';
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const fmtTime = (ms) => new Date(ms).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }) + ' UTC';
 
 function el(tag, attrs = {}, ...children) {
   const node = tag === 'svg' || attrs.svg ? document.createElementNS(SVG, tag) : document.createElement(tag);
@@ -130,16 +132,16 @@ function el(tag, attrs = {}, ...children) {
 function tile(name, w) {
   const t = el('div', { class: 'tile' }, el('div', { class: 'label' }, WINDOW_LABELS[name]));
   if (w.coverage == null) {
-    t.append(el('div', { class: 'value' }, '–'), el('div', { class: 'sub' }, 'okno jeszcze nie skanowane'));
+    t.append(el('div', { class: 'value' }, '–'), el('div', { class: 'sub' }, 'window not scanned yet'));
     return t;
   }
   t.append(
     el('div', { class: 'value' }, nf.format(w.odra)),
-    el('div', { class: 'sub' }, `${pct(w.odra, w.total)} z ${nf.format(w.total)} transakcji`),
-    el('div', { class: 'sub' }, `${pct(w.odra, w.contract)} z ${nf.format(w.contract)} kontraktowych`),
+    el('div', { class: 'sub' }, `${pct(w.odra, w.total)} of ${nf.format(w.total)} transactions`),
+    el('div', { class: 'sub' }, `${pct(w.odra, w.contract)} of ${nf.format(w.contract)} contract calls`),
   );
   if (w.coverage < 0.9995) {
-    t.append(el('span', { class: 'partial' }, `przeskanowano ${Math.floor(100 * w.coverage)}% okna`));
+    t.append(el('span', { class: 'partial' }, `${Math.floor(100 * w.coverage)}% scanned`));
   }
   return t;
 }
@@ -157,7 +159,7 @@ function chart(days) {
   const y = (v) => top + plotH - (v / max) * plotH;
   const step = plotW / days.length;
   const barW = Math.max(2, step - 2);
-  const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Transakcje dziennie w podziale na Odrę, inne kontrakty i natywne' });
+  const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Daily transactions split into Odra, other contracts and native' });
   for (const frac of [0, 0.5, 1]) {
     const v = max * frac;
     svg.append(
@@ -183,15 +185,15 @@ function chart(days) {
     if (i % 5 === 0 || i === days.length - 1) {
       // The last label would collide with its neighbour when the two are less than 3 days apart.
       if (i === days.length - 1 && (days.length - 1) % 5 !== 0 && (days.length - 1) % 5 < 3) return hit();
-      svg.append(el('text', { svg: 1, x: x + barW / 2, y: H - 6, 'text-anchor': 'middle' }, `${d.day.slice(8)}.${d.day.slice(5, 7)}`));
+      svg.append(el('text', { svg: 1, x: x + barW / 2, y: H - 6, 'text-anchor': 'middle' }, `${MONTHS[d.day.slice(5, 7) - 1]} ${Number(d.day.slice(8))}`));
     }
     hit();
     function hit() {
-      const r = el('rect', { svg: 1, class: 'hit', x: left + i * step, y: top, width: step, height: plotH, tabindex: 0, 'aria-label': `${d.day}: Odra ${d.odra}, inne kontrakty ${d.contract}, natywne ${d.native}` });
+      const r = el('rect', { svg: 1, class: 'hit', x: left + i * step, y: top, width: step, height: plotH, tabindex: 0, 'aria-label': `${d.day}: Odra ${d.odra}, other contracts ${d.contract}, native ${d.native}` });
       const show = () => {
         tip.replaceChildren(el('b', {}, d.day), ...SERIES.map((s) => el('div', {},
           el('span', {}, el('i', { style: `background:${s.color}` }), s.label), el('span', {}, nf.format(d[s.key])))),
-          el('div', {}, el('span', {}, 'Udział Odry'), el('span', {}, pct(d.odra, d.odra + d.contract + d.native))));
+          el('div', {}, el('span', {}, 'Odra share'), el('span', {}, pct(d.odra, d.odra + d.contract + d.native))));
         tip.hidden = false;
         r.classList.add('active');
         const box = wrap.getBoundingClientRect();
@@ -222,33 +224,33 @@ function table(head, rows) {
 function network(name, n) {
   const box = el('section', { class: 'net' },
     el('h2', {}, name),
-    el('div', { class: 'asof' }, `stan na ${new Date(n.tip.t).toLocaleString('pl-PL', { dateStyle: 'medium', timeStyle: 'short' })}, blok ${nf.format(n.tip.h)}`),
+    el('div', { class: 'asof' }, `as of ${fmtTime(n.tip.t)}, block ${nf.format(n.tip.h)}`),
     el('div', { class: 'tiles' }, ...Object.keys(WINDOW_LABELS).map((w) => tile(w, n.windows[w]))),
-    el('h3', {}, 'Transakcje dziennie, ostatnie 30 dni'),
-    el('p', { class: 'hint' }, 'Dni według UTC; pierwszy i ostatni słupek obejmują niepełną dobę.'),
+    el('h3', {}, 'Transactions per day, last 30 days'),
+    el('p', { class: 'hint' }, 'Days are UTC; the first and last bars cover a partial day.'),
     el('div', { class: 'legend' }, ...SERIES.map((s) => el('span', {}, el('i', { style: `background:${s.color}` }), s.label))),
     chart(n.days),
-    el('details', {}, el('summary', {}, 'Pokaż dane jako tabelę'),
-      table(['Dzień', 'Odra', 'Inne kontrakty', 'Natywne', 'Udział Odry'], n.days.toReversed().map((d) =>
+    el('details', {}, el('summary', {}, 'Show data as a table'),
+      table(['Day', 'Odra', 'Other contracts', 'Native', 'Odra share'], n.days.toReversed().map((d) =>
         [d.day, nf.format(d.odra), nf.format(d.contract), nf.format(d.native), pct(d.odra, d.odra + d.contract + d.native)]))),
-    el('h3', {}, 'Najczęściej używane kontrakty Odry'),
+    el('h3', {}, 'Most used Odra contracts'),
     el('p', { class: 'hint' }, n.odraPackages > n.top.length
-      ? `${n.top.length} z ${nf.format(n.odraPackages)} pakietów kontraktów użytych w ostatnich 30 dniach, według liczby transakcji.`
-      : 'Pakiety kontraktów użyte w ostatnich 30 dniach, według liczby transakcji.'),
+      ? `Top ${n.top.length} of ${nf.format(n.odraPackages)} contract packages used in the last 30 days, by transaction count.`
+      : 'Contract packages used in the last 30 days, by transaction count.'),
   );
   box.append(n.top.length
-    ? table(['Pakiet', '24h', '7 dni', '30 dni'], n.top.map((p) => [
+    ? table(['Package', '24h', '7 days', '30 days'], n.top.map((p) => [
         el('a', { href: `${n.explorer}/contract-package/${p.pkg}`, target: '_blank', rel: 'noopener', title: p.pkg }, `${p.pkg.slice(0, 10)}…${p.pkg.slice(-6)}`),
         nf.format(p['24h']), nf.format(p['7d']), nf.format(p['30d'])]))
-    : el('div', { class: 'empty' }, 'W przeskanowanym zakresie nie znaleziono transakcji używających Odry.'));
+    : el('div', { class: 'empty' }, 'No transactions using Odra were found in the scanned range.'));
   return box;
 }
 
 const root = document.getElementById('networks');
 const names = Object.keys(DATA?.networks ?? {});
-if (!names.length) root.append(el('div', { class: 'empty' }, 'Brak danych — uruchom najpierw skan: node odromierz.mjs'));
+if (!names.length) root.append(el('div', { class: 'empty' }, 'No data yet. Run a scan first: node odromierz.mjs'));
 for (const name of names) root.append(network(name, DATA.networks[name]));
-if (DATA) document.getElementById('generated').textContent = `Strona wygenerowana ${new Date(DATA.generatedAt).toLocaleString('pl-PL', { dateStyle: 'medium', timeStyle: 'short' })}.`;
+if (DATA) document.getElementById('generated').textContent = `Page generated ${fmtTime(DATA.generatedAt)}.`;
 </script>
 </body>
 </html>

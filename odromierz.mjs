@@ -336,7 +336,21 @@ function scannerFor(net, concurrency) {
   return { getBlock, heightAt, scanChunk };
 }
 
+/** Two scans sharing a cache overwrite each other's state, so only one may run per network. */
+function lockNetwork(net) {
+  const file = path.join(ROOT, `.scan-${net}.lock`);
+  const owner = Number(fs.existsSync(file) && fs.readFileSync(file, 'utf8'));
+  if (owner && owner !== process.pid) {
+    let alive = true;
+    try { process.kill(owner, 0); } catch { alive = false; }
+    if (alive) throw new Error(`another scan is already running (pid ${owner})`);
+  }
+  fs.writeFileSync(file, String(process.pid));
+  process.on('exit', () => fs.rmSync(file, { force: true }));
+}
+
 async function scanNetwork(net, opts) {
+  lockNetwork(net);
   const s = scannerFor(net, opts.concurrency);
   const stateFile = path.join(netDir(net), 'state.json');
   const state = readJson(stateFile, { intervals: [] });
@@ -454,6 +468,8 @@ function buildSite() {
 
 const opts = parseArgs(process.argv.slice(2));
 if (opts.cmd === 'scan') {
+  // Exit through the normal path on Ctrl-C so the lock files are removed.
+  for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => process.exit(130));
   // Refresh the page while a long backfill runs, so partial results are viewable.
   const timer = setInterval(() => { try { buildSite(); } catch (e) { console.error(`report: ${e.message}`); } }, 120e3);
   const results = await Promise.allSettled(opts.networks.map((n) => scanNetwork(n, opts)));
