@@ -4,6 +4,10 @@ on:
   schedule:
     - cron: '17 * * * *'
   workflow_dispatch:
+    inputs:
+      window:
+        description: How far back to scan (24h, 7d or 30d)
+        default: 30d
 
 permissions:
   contents: write
@@ -37,7 +41,10 @@ jobs:
           node-version: 24
 
       - name: Scan
-        run: node odromierz.mjs
+        # The SCAN_WINDOW repository variable narrows scheduled runs, e.g. while a backfill runs elsewhere.
+        run: node odromierz.mjs --window "$WINDOW"
+        env:
+          WINDOW: ${{ inputs.window || vars.SCAN_WINDOW || '30d' }}
 
       # Chunks finished before a failure are still valid, so keep them. The branch is
       # replaced by a single commit each time; history of a cache is not worth its size.

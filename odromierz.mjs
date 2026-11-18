@@ -358,10 +358,8 @@ async function scanNetwork(net, opts) {
   const tip = await s.getBlock();
   state.tip = { h: tip.h, t: tip.t };
   state.bounds = {};
-  for (const [name, ms] of Object.entries(WINDOWS)) {
-    if (ms <= WINDOWS[opts.window]) state.bounds[name] = await s.heightAt(tip.t - ms, tip);
-  }
-  // Wider windows than the one requested keep their coverage from what an earlier run scanned.
+  // Every window gets its bound, so the report can say how much of the wider ones earlier runs covered.
+  for (const [name, ms] of Object.entries(WINDOWS)) state.bounds[name] = await s.heightAt(tip.t - ms, tip);
   const chunks = missingChunks(state.intervals, state.bounds[opts.window], tip.h);
   const total = chunks.reduce((a, [l, h]) => a + h - l + 1, 0);
   console.log(`[${net}] tip ${tip.h}, ${total} blocks to scan for the ${opts.window} window`);
