@@ -6,7 +6,8 @@
 <title>Odrameter</title>
 <style>
   :root {
-    color-scheme: light;
+    /* Light only: the palette is built around the logo's blue on a light page. */
+    color-scheme: only light;
     --page: #f4f3f0;
     --surface: #fcfcfb;
     --border: #e2e0da;
@@ -14,36 +15,24 @@
     --text-primary: #0b0b0b;
     --text-secondary: #52514e;
     --text-muted: #7b7a74;
-    --odra: #2a78d6;
+    --brand: #5d84ec;
+    --odra: #5d84ec;
     --contract: #eb6834;
     --native: #c9c7bf;
     --warn-bg: #fdf1d6;
     --warn-text: #6b4a00;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      color-scheme: dark;
-      --page: #111110;
-      --surface: #1a1a19;
-      --border: #30302d;
-      --grid: #2a2a27;
-      --text-primary: #f0efec;
-      --text-secondary: #c3c2b7;
-      --text-muted: #8f8e85;
-      --odra: #3987e5;
-      --contract: #d95926;
-      --native: #55544e;
-      --warn-bg: #3a2c08;
-      --warn-text: #f0d48a;
-    }
   }
   * { box-sizing: border-box; }
   body {
     margin: 0; background: var(--page); color: var(--text-primary);
     font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   }
-  main { max-width: 1180px; margin: 0 auto; padding: 32px 16px 56px; }
-  h1 { font-size: 30px; line-height: 1.15; margin: 0 0 6px; letter-spacing: -0.02em; text-wrap: balance; }
+  .band { background: var(--brand); color: #fff; }
+  .band .inner { max-width: 1180px; margin: 0 auto; padding: 16px; display: flex; align-items: center; gap: 16px; }
+  .band img { display: block; height: 32px; width: auto; }
+  .band .sep { width: 1px; height: 28px; background: rgb(255 255 255 / 0.5); }
+  .band h1 { font-size: 23px; font-weight: 650; line-height: 1; margin: 0; letter-spacing: -0.01em; }
+  main { max-width: 1180px; margin: 0 auto; padding: 24px 16px 56px; }
   .lede { color: var(--text-secondary); margin: 0 0 28px; max-width: 68ch; }
   .hero {
     display: flex; flex-wrap: wrap; align-items: center; gap: 12px 36px;
@@ -116,8 +105,12 @@
 </style>
 </head>
 <body>
-<main>
+<header class="band"><div class="inner">
+  <img src="data:image/png;base64,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" alt="Odra" width="248" height="72">
+  <span class="sep"></span>
   <h1>Odrameter</h1>
+</div></header>
+<main>
   <p class="lede">How many Casper transactions use Odra: they execute at least one contract written in the framework, or install one.</p>
   <div id="hero"></div>
   <div class="networks" id="networks"></div>
