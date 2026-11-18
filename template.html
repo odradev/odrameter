@@ -163,26 +163,26 @@ function tile(name, w) {
   return t;
 }
 
-/** The headline: Odra's share of all mainnet transactions over the last 7 days. */
+/** The headline: Odra's share of mainnet contract calls over the last 7 days. */
 function hero(w) {
-  const share = w.total ? w.odra / w.total : 0;
+  const share = w.contract ? w.odra / w.contract : 0;
   const arc = 'M 14 104 A 90 90 0 0 1 194 104';
-  const gauge = el('svg', { viewBox: '0 0 208 112', role: 'img', 'aria-label': `Odra share: ${pct(w.odra, w.total)}` },
+  const gauge = el('svg', { viewBox: '0 0 208 112', role: 'img', 'aria-label': `Odra share of contract calls: ${pct(w.odra, w.contract)}` },
     el('path', { svg: 1, class: 'track', d: arc, fill: 'none', 'stroke-width': 16, 'stroke-linecap': 'round' }));
   if (share > 0) {
     gauge.append(el('path', { svg: 1, class: 'fill', d: arc, fill: 'none', 'stroke-width': 16, 'stroke-linecap': 'round',
       pathLength: 100, 'stroke-dasharray': `${100 * share} 100` }));
   }
   const claim = el('p', { class: 'claim' });
-  claim.append(el('b', {}, nf.format(w.odra)), ` of ${nf.format(w.total)} mainnet transactions used Odra`);
+  claim.append(el('b', {}, nf.format(w.odra)), ` of ${nf.format(w.contract)} mainnet contract calls used Odra`);
   const text = el('div', { class: 'text' },
     el('div', { class: 'kicker' }, 'Mainnet, last 7 days'),
     claim,
-    el('p', { class: 'sub' }, `Among transactions that call a contract, the share is ${pct(w.odra, w.contract)}.`));
+    el('p', { class: 'sub' }, `Counting native transfers and auction operations as well, that is ${pct(w.odra, w.total)} of all ${nf.format(w.total)} transactions.`));
   if (w.coverage == null) text.append(el('span', { class: 'partial' }, 'partially scanned'));
   else if (w.coverage < 0.9995) text.append(el('span', { class: 'partial' }, `${Math.floor(100 * w.coverage)}% of the week scanned so far`));
   return el('section', { class: 'hero' },
-    el('div', { class: 'gauge' }, gauge, el('div', { class: 'reading' }, pct(w.odra, w.total))), text);
+    el('div', { class: 'gauge' }, gauge, el('div', { class: 'reading' }, pct(w.odra, w.contract))), text);
 }
 
 function niceMax(v) {
