@@ -1,0 +1,59 @@
+name: Scan and deploy
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+# Two scans writing the same cache would overwrite each other's work.
+concurrency:
+  group: scan
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # The scan cache lives on the `data` branch, so each run only fetches blocks produced since the last one.
+      - name: Restore scan cache
+        uses: actions/checkout@v4
+        with:
+          ref: data
+          path: data
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Scan
+        run: node odromierz.mjs
+
+      # Chunks finished before a failure are still valid, so keep them. The branch is
+      # replaced by a single commit each time; history of a cache is not worth its size.
+      - name: Save scan cache
+        if: always() && hashFiles('data/*/state.json') != ''
+        working-directory: data
+        run: |
+          git checkout --orphan snapshot
+          git add -A
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit --quiet -m "Scan cache $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push --force origin snapshot:data
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Odromierz</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f4f3f0;
+    --surface: #fcfcfb;
+    --border: #e2e0da;
+    --grid: #e9e7e1;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #7b7a74;
+    --odra: #2a78d6;
+    --contract: #eb6834;
+    --native: #c9c7bf;
+    --warn-bg: #fdf1d6;
+    --warn-text: #6b4a00;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --page: #111110;
+      --surface: #1a1a19;
+      --border: #30302d;
+      --grid: #2a2a27;
+      --text-primary: #f0efec;
+      --text-secondary: #c3c2b7;
+      --text-muted: #8f8e85;
+      --odra: #3987e5;
+      --contract: #d95926;
+      --native: #55544e;
+      --warn-bg: #3a2c08;
+      --warn-text: #f0d48a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page); color: var(--text-primary);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 1180px; margin: 0 auto; padding: 32px 16px 56px; }
+  h1 { font-size: 30px; line-height: 1.15; margin: 0 0 6px; letter-spacing: -0.02em; text-wrap: balance; }
+  .lede { color: var(--text-secondary); margin: 0 0 28px; max-width: 68ch; }
+  .networks { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); gap: 20px; }
+  .net { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; min-width: 0; }
+  .net h2 { font-size: 13px; margin: 0; text-transform: uppercase; letter-spacing: 0.08em; }
+  .net .asof { color: var(--text-muted); font-size: 13px; margin: 2px 0 16px; }
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .tile { border: 1px solid var(--border); border-radius: 10px; padding: 12px; min-width: 0; }
+  .tile .label { color: var(--text-secondary); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .tile .value { font-size: 28px; font-weight: 650; line-height: 1.2; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+  .tile .sub { color: var(--text-secondary); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .tile .partial {
+    display: inline-block; margin-top: 6px; padding: 1px 7px; border-radius: 999px;
+    background: var(--warn-bg); color: var(--warn-text); font-size: 12px;
+  }
+  h3 { font-size: 14px; margin: 24px 0 2px; }
+  .hint { color: var(--text-muted); font-size: 13px; margin: 0 0 8px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--text-secondary); margin: 6px 0 4px; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; }
+  .chart { position: relative; }
+  .chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .chart text { fill: var(--text-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+  .chart .gridline { stroke: var(--grid); stroke-width: 1; }
+  .chart .hit { fill: transparent; }
+  .chart .hit:hover, .chart .hit.active { fill: var(--text-primary); fill-opacity: 0.06; }
+  .tip {
+    position: absolute; pointer-events: none; z-index: 2; min-width: 170px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 10px; font-size: 13px; box-shadow: 0 4px 14px rgb(0 0 0 / 0.14);
+    font-variant-numeric: tabular-nums;
+  }
+  .tip b { display: block; margin-bottom: 2px; }
+  .tip div { display: flex; justify-content: space-between; gap: 14px; color: var(--text-secondary); }
+  .tip div span:last-child { color: var(--text-primary); }
+  .tip i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; }
+  .scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+  th, td { text-align: right; padding: 6px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th { color: var(--text-secondary); font-weight: 500; }
+  th:first-child, td:first-child { text-align: left; padding-left: 0; }
+  td a { color: var(--text-primary); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  details { margin-top: 8px; }
+  summary { cursor: pointer; color: var(--text-secondary); font-size: 13px; }
+  .empty { color: var(--text-muted); padding: 12px 0; }
+  footer { color: var(--text-muted); font-size: 13px; margin-top: 28px; max-width: 80ch; }
+  footer code { font-size: 12px; }
+  @media (max-width: 520px) {
+    .tile .value { font-size: 22px; }
+    .tile { padding: 10px 8px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Odromierz</h1>
+  <p class="lede">Ile transakcji w sieci Casper używa Odry — czyli wykonuje co najmniej jeden kontrakt napisany w tym frameworku albo taki kontrakt instaluje.</p>
+  <div class="networks" id="networks"></div>
+  <footer>
+    <p><strong>Jak to jest liczone.</strong> Skaner pobiera z węzła RPC każdy blok z okna, a dla każdej transakcji uruchamiającej wasm sprawdza w efektach wykonania, jakie kontrakty zostały dotknięte. Kontrakt uznaje za napisany w Odrze, jeśli jego kod wasm zawiera nazwy argumentów instalatora Odry (<code>odra_cfg_*</code>), obecne od wersji 0.8. Natywne transfery i operacje aukcyjne nie wykonują kontraktów, więc liczą się tylko do sumy wszystkich transakcji. Transakcje nieudane są liczone, jeśli były skierowane do kontraktu Odry.</p>
+    <p id="generated"></p>
+  </footer>
+</main>
+<script>
+const DATA = /*__DATA__*/null;
+const WINDOW_LABELS = { '24h': '24 godziny', '7d': '7 dni', '30d': '30 dni' };
+const SERIES = [
+  { key: 'odra', label: 'Odra', color: 'var(--odra)' },
+  { key: 'contract', label: 'Inne kontrakty', color: 'var(--contract)' },
+  { key: 'native', label: 'Natywne (transfery, aukcja)', color: 'var(--native)' },
+];
+const nf = new Intl.NumberFormat('pl-PL');
+const pct = (part, whole) => whole ? (100 * part / whole).toLocaleString('pl-PL', { maximumFractionDigits: 1 }) + '%' : '–';
+const SVG = 'http://www.w3.org/2000/svg';
+
+function el(tag, attrs = {}, ...children) {
+  const node = tag === 'svg' || attrs.svg ? document.createElementNS(SVG, tag) : document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'svg') continue;
+    if (k === 'class') node.setAttribute('class', v); else if (k === 'style') node.style.cssText = v; else node.setAttribute(k, v);
+  }
+  for (const c of children) node.append(c);
+  return node;
+}
+
+function tile(name, w) {
+  const t = el('div', { class: 'tile' }, el('div', { class: 'label' }, WINDOW_LABELS[name]));
+  if (w.coverage == null) {
+    t.append(el('div', { class: 'value' }, '–'), el('div', { class: 'sub' }, 'okno jeszcze nie skanowane'));
+    return t;
+  }
+  t.append(
+    el('div', { class: 'value' }, nf.format(w.odra)),
+    el('div', { class: 'sub' }, `${pct(w.odra, w.total)} z ${nf.format(w.total)} transakcji`),
+    el('div', { class: 'sub' }, `${pct(w.odra, w.contract)} z ${nf.format(w.contract)} kontraktowych`),
+  );
+  if (w.coverage < 0.9995) {
+    t.append(el('span', { class: 'partial' }, `przeskanowano ${Math.floor(100 * w.coverage)}% okna`));
+  }
+  return t;
+}
+
+function niceMax(v) {
+  if (v <= 0) return 1;
+  const pow = 10 ** Math.floor(Math.log10(v));
+  for (const m of [1, 2, 2.5, 5, 10]) if (m * pow >= v) return m * pow;
+}
+
+function chart(days) {
+  const W = 560, H = 220, left = 44, right = 4, top = 8, bottom = 22;
+  const plotW = W - left - right, plotH = H - top - bottom;
+  const max = niceMax(Math.max(...days.map((d) => d.odra + d.contract + d.native)));
+  const y = (v) => top + plotH - (v / max) * plotH;
+  const step = plotW / days.length;
+  const barW = Math.max(2, step - 2);
+  const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Transakcje dziennie w podziale na Odrę, inne kontrakty i natywne' });
+  for (const frac of [0, 0.5, 1]) {
+    const v = max * frac;
+    svg.append(
+      el('line', { svg: 1, class: 'gridline', x1: left, x2: W - right, y1: y(v), y2: y(v) }),
+      el('text', { svg: 1, x: left - 6, y: y(v) + 4, 'text-anchor': 'end' }, nf.format(v)),
+    );
+  }
+  const wrap = el('div', { class: 'chart' }, svg);
+  const tip = el('div', { class: 'tip', hidden: '' });
+  wrap.append(tip);
+  days.forEach((d, i) => {
+    const x = left + i * step + (step - barW) / 2;
+    let acc = 0;
+    for (const s of SERIES) {
+      const v = d[s.key];
+      if (!v) continue;
+      const y1 = y(acc + v), h = y(acc) - y1;
+      // 2px surface gap between stacked segments, as long as the segment can afford it.
+      const gap = acc > 0 && h > 3 ? 2 : 0;
+      svg.append(el('rect', { svg: 1, x, y: y1, width: barW, height: Math.max(0.5, h - gap), rx: Math.min(2, barW / 2), style: `fill:${s.color}` }));
+      acc += v;
+    }
+    if (i % 5 === 0 || i === days.length - 1) {
+      // The last label would collide with its neighbour when the two are less than 3 days apart.
+      if (i === days.length - 1 && (days.length - 1) % 5 !== 0 && (days.length - 1) % 5 < 3) return hit();
+      svg.append(el('text', { svg: 1, x: x + barW / 2, y: H - 6, 'text-anchor': 'middle' }, `${d.day.slice(8)}.${d.day.slice(5, 7)}`));
+    }
+    hit();
+    function hit() {
+      const r = el('rect', { svg: 1, class: 'hit', x: left + i * step, y: top, width: step, height: plotH, tabindex: 0, 'aria-label': `${d.day}: Odra ${d.odra}, inne kontrakty ${d.contract}, natywne ${d.native}` });
+      const show = () => {
+        tip.replaceChildren(el('b', {}, d.day), ...SERIES.map((s) => el('div', {},
+          el('span', {}, el('i', { style: `background:${s.color}` }), s.label), el('span', {}, nf.format(d[s.key])))),
+          el('div', {}, el('span', {}, 'Udział Odry'), el('span', {}, pct(d.odra, d.odra + d.contract + d.native))));
+        tip.hidden = false;
+        r.classList.add('active');
+        const box = wrap.getBoundingClientRect();
+        const cx = ((left + (i + 0.5) * step) / W) * box.width;
+        const tw = tip.offsetWidth;
+        tip.style.left = Math.max(0, Math.min(box.width - tw, cx > box.width / 2 ? cx - tw - 10 : cx + 10)) + 'px';
+        tip.style.top = '4px';
+      };
+      const hide = () => { tip.hidden = true; r.classList.remove('active'); };
+      r.addEventListener('pointerenter', show);
+      r.addEventListener('pointerleave', hide);
+      r.addEventListener('focus', show);
+      r.addEventListener('blur', hide);
+      svg.append(r);
+    }
+  });
+  return wrap;
+}
+
+function table(head, rows) {
+  const t = el('table', {}, el('thead', {}, el('tr', {}, ...head.map((h) => el('th', {}, h)))));
+  const body = el('tbody');
+  for (const row of rows) body.append(el('tr', {}, ...row.map((c) => el('td', {}, c))));
+  t.append(body);
+  return el('div', { class: 'scroll' }, t);
+}
+
+function network(name, n) {
+  const box = el('section', { class: 'net' },
+    el('h2', {}, name),
+    el('div', { class: 'asof' }, `stan na ${new Date(n.tip.t).toLocaleString('pl-PL', { dateStyle: 'medium', timeStyle: 'short' })}, blok ${nf.format(n.tip.h)}`),
+    el('div', { class: 'tiles' }, ...Object.keys(WINDOW_LABELS).map((w) => tile(w, n.windows[w]))),
+    el('h3', {}, 'Transakcje dziennie, ostatnie 30 dni'),
+    el('p', { class: 'hint' }, 'Dni według UTC; pierwszy i ostatni słupek obejmują niepełną dobę.'),
+    el('div', { class: 'legend' }, ...SERIES.map((s) => el('span', {}, el('i', { style: `background:${s.color}` }), s.label))),
+    chart(n.days),
+    el('details', {}, el('summary', {}, 'Pokaż dane jako tabelę'),
+      table(['Dzień', 'Odra', 'Inne kontrakty', 'Natywne', 'Udział Odry'], n.days.toReversed().map((d) =>
+        [d.day, nf.format(d.odra), nf.format(d.contract), nf.format(d.native), pct(d.odra, d.odra + d.contract + d.native)]))),
+    el('h3', {}, 'Najczęściej używane kontrakty Odry'),
+    el('p', { class: 'hint' }, n.odraPackages > n.top.length
+      ? `${n.top.length} z ${nf.format(n.odraPackages)} pakietów kontraktów użytych w ostatnich 30 dniach, według liczby transakcji.`
+      : 'Pakiety kontraktów użyte w ostatnich 30 dniach, według liczby transakcji.'),
+  );
+  box.append(n.top.length
+    ? table(['Pakiet', '24h', '7 dni', '30 dni'], n.top.map((p) => [
+        el('a', { href: `${n.explorer}/contract-package/${p.pkg}`, target: '_blank', rel: 'noopener', title: p.pkg }, `${p.pkg.slice(0, 10)}…${p.pkg.slice(-6)}`),
+        nf.format(p['24h']), nf.format(p['7d']), nf.format(p['30d'])]))
+    : el('div', { class: 'empty' }, 'W przeskanowanym zakresie nie znaleziono transakcji używających Odry.'));
+  return box;
+}
+
+const root = document.getElementById('networks');
+const names = Object.keys(DATA?.networks ?? {});
+if (!names.length) root.append(el('div', { class: 'empty' }, 'Brak danych — uruchom najpierw skan: node odromierz.mjs'));
+for (const name of names) root.append(network(name, DATA.networks[name]));
+if (DATA) document.getElementById('generated').textContent = `Strona wygenerowana ${new Date(DATA.generatedAt).toLocaleString('pl-PL', { dateStyle: 'medium', timeStyle: 'short' })}.`;
+</script>
+</body>
+</html>
