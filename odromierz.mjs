@@ -96,8 +96,9 @@ function makeRpc(url, concurrency) {
         if (json.error) throw new RpcError(method, json.error);
         return json.result;
       } catch (e) {
-        // A JSON-RPC error is the node's answer, not a transport problem — retrying won't change it.
-        if (e instanceof RpcError || attempt >= 6) throw e;
+        // The public endpoints balance over several nodes, and one that is still syncing answers
+        // "not found" for things the others have. So a JSON-RPC error is retried too, just fewer times.
+        if (attempt >= (e instanceof RpcError ? 3 : 6)) throw e;
         await sleep(Math.min(30e3, 500 * 2 ** attempt));
       }
     }
