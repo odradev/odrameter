@@ -131,18 +131,14 @@ function el(tag, attrs = {}, ...children) {
 
 function tile(name, w) {
   const t = el('div', { class: 'tile' }, el('div', { class: 'label' }, WINDOW_LABELS[name]));
-  if (w.coverage == null) {
-    t.append(el('div', { class: 'value' }, '–'), el('div', { class: 'sub' }, 'window not scanned yet'));
-    return t;
-  }
   t.append(
     el('div', { class: 'value' }, nf.format(w.odra)),
     el('div', { class: 'sub' }, `${pct(w.odra, w.total)} of ${nf.format(w.total)} transactions`),
     el('div', { class: 'sub' }, `${pct(w.odra, w.contract)} of ${nf.format(w.contract)} contract calls`),
   );
-  if (w.coverage < 0.9995) {
-    t.append(el('span', { class: 'partial' }, `${Math.floor(100 * w.coverage)}% scanned`));
-  }
+  // A window no scan has asked for yet has no known extent, so its coverage cannot be put in numbers.
+  if (w.coverage == null) t.append(el('span', { class: 'partial' }, 'partially scanned'));
+  else if (w.coverage < 0.9995) t.append(el('span', { class: 'partial' }, `${Math.floor(100 * w.coverage)}% scanned`));
   return t;
 }
 
